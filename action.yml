@@ -15,7 +15,7 @@ inputs:
     default: '1.5.7'
   terragrunt-version:
     description: 'Terragrunt version to install'
-    default: '0.52.0'
+    default: '0.68.1'
   application-repo:
     description: 'terraform-event-bus repository'
     default: 'FinalCAD/terraform-event-bus'
