@@ -3,13 +3,13 @@ description: 'Deploy eventbridge for microservice'
 inputs:
   app-name:
     description: 'Application id'
-    required: true
+    default: ''
   app-suffix:
     description: 'Suffix for namming'
     default: ''
   aws-role:
     description: 'Aws role to apply changes'
-    required: true
+    default: ''
   terraform-version:
     description: 'Terraform version to install'
     default: '1.5.7'
@@ -27,10 +27,10 @@ inputs:
     default: ''
   github-ssh:
     description: 'Github ssh key to pull terragrunt from github api'
-    required: true
+    default: ''
   environment:
     description: 'Finalcad envrionment: production, staging, sandbox'
-    require: true
+    default: ''
   region-friendly:
     description: 'Finalcad region: frankfurt or tokyo'
     default: 'frankfurt'
@@ -40,94 +40,8 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/checkout@v3
-      with:
-        path: 'app'
-    - uses: actions/checkout@v3
-      with:
-        ssh-key: ${{ inputs.github-ssh }}
-        repository: ${{ inputs.application-repo }}
-        ref: ${{ inputs.application-ref }}
-        path: 'terragrunt'
-    - name: Detect aws region
-      id: aws_region
+    - name: Deprecation of FinalCAD/AppEventAction
       shell: bash
       run: |
-        set -e
-        case '${{ inputs.region-friendly }}' in
-            'frankfurt') awsregion='eu-central-1';;
-            'tokyo') awsregion='ap-northeast-1';;
-        esac
-        echo "awsregion=${awsregion}" >> $GITHUB_OUTPUT
-    # Setup ssh key
-    - name: Add ssh key
-      shell: bash
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ inputs.github-ssh }}" > ~/.ssh/id_rsa
-        ssh-keyscan github.com >> ~/.ssh/known_hosts
-        chmod 600 ~/.ssh/id_rsa ~/.ssh/known_hosts
-        eval $(ssh-agent)
-        ssh-add ~/.ssh/id_rsa
-    # Setup terraform
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ inputs.terraform-version }}
-        terraform_wrapper: false
-    # Setup terragrunt
-    - name: Terragrunt Binary Installer Action
-      uses: autero1/action-terragrunt@v1.3.0
-      if: inputs.terragrunt-version != 'disabled'
-      with:
-        terragrunt_version: ${{ inputs.terragrunt-version }}
-        token: ${{ inputs.github-token }}
-    # Configure aws credentials
-    - name: Configure AWS credentials for security
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-region: ${{ steps.aws_region.outputs.awsregion }}
-        role-to-assume: ${{ inputs.aws-role }}
-        role-session-name: OIDCSession
-    # Terragrunt plan
-    - name: Terragrunt plan
-      if: inputs.pr-number != ''
-      shell: bash
-      run: |
-        set -e
-        cd ./terragrunt/${{ inputs.environment }}/${{ inputs.region-friendly }}
-        terragrunt run-all init -reconfigure
-        terragrunt run-all plan -out plan
-        terragrunt run-all show plan -no-color > ${{ github.workspace }}/terragrunt/plan.txt
-      continue-on-error: true
-    # Comment on pr
-    - uses: actions/github-script@v6
-      if: inputs.pr-number != ''
-      env:
-        PLAN: ${{ steps.plan.outputs.show }}
-      with:
-        script: |
-          const fs = require('fs')
-          const data = fs.readFileSync('${{ github.workspace }}/terragrunt/plan.txt')
-          const output = `#### Terraform Plan : \`${{ steps.plan.outcome }}\`
-          <details><summary>Show Plan</summary>\n
-          \`\`\`terraform\n
-          ${data}
-          \`\`\`\n
-          </details>
-          *Pushed by: @${{ github.actor }}`;
-          github.rest.issues.createComment({
-            issue_number: ${{ inputs.pr-number }},
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: output
-          })
-    #Apply terragrunt
-    - name: Terragrunt apply
-      if: inputs.pr-number == '' && inputs.dry-run == 'false'
-      shell: bash
-      run: |
-        set -e
-        cd ./terragrunt/${{ inputs.environment }}/${{ inputs.region-friendly }}
-        terragrunt run-all init -reconfigure
-        terragrunt run-all apply -auto-approve --terragrunt-non-interactive
+        echo '::error title=Deprecation of FinalCAD/AppEventAction::FinalCAD/AppEventAction has been deprecated. Use https://github.com/FinalCAD/AppMicroserviceAction instead.'
+        exit 1
